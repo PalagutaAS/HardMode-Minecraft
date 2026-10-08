@@ -1,0 +1,8 @@
+{
+  "effect.hardmode.lethal_poison": "Lethal Poison I",
+  "effect.hardmode.lethal_poison_2": "Lethal Poison II",
+  "effect.hardmode.lethal_poison_3": "Lethal Poison III",
+  "effect.hardmode.lethal_poison_4": "Lethal Poison IV",
+  "death.attack.hardmode.lethal_poison": "%1$s succumbed to lethal poison",
+  "death.attack.hardmode.lethal_poison.player": "%1$s was poisoned to death by %2$s"
+}

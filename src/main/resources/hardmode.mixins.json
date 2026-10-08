@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"package": "net.elrid.hardmode.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"ExampleMixin",
+		"HungerManagerMixin",
+		"ServerPlayerRegenMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

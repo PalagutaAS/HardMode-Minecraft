@@ -1,0 +1,17 @@
+{
+	"required": true,
+	"package": "net.elrid.hardmode.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"ExampleClientMixin",
+		"GameRendererMixin",
+		"HeartTypeMixin",
+		"PoisonFogMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

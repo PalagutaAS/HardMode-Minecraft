@@ -1,0 +1,8 @@
+{
+  "effect.hardmode.lethal_poison": "Смертельный яд I",
+  "effect.hardmode.lethal_poison_2": "Смертельный яд II",
+  "effect.hardmode.lethal_poison_3": "Смертельный яд III",
+  "effect.hardmode.lethal_poison_4": "Смертельный яд IV",
+  "death.attack.hardmode.lethal_poison": "%1$s погиб от смертельного яда",
+  "death.attack.hardmode.lethal_poison.player": "%1$s был отравлен насмерть игроком %2$s"
+}
