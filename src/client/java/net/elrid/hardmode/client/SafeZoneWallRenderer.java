@@ -48,17 +48,17 @@ public class SafeZoneWallRenderer {
     private static final float COLOR_A = 0.850F; // полная альфа
 
     /** Высота стены относительно центра зоны. */
-    private static final float WALL_BOTTOM = -24.0F;
+    private static final float WALL_BOTTOM = -30.0F;
     private static final float WALL_TOP    = 40.0F;
     /** Длина одного тайла текстуры по горизонтали (в блоках). */
-    private static final float TILE_LENGTH = 0.050F;
+    private static final float TILE_LENGTH = 0.550F;
     /** Скорость вертикального скролла (доля UV за тик). */
-    private static final float SCROLL_SPEED = 0.01F;
+    private static final float SCROLL_SPEED = 0.15F;
 
     /** Дистанция от игрока до стены, дальше которой стена не видна. */
-    private static final float FADE_FAR  = 80.0F;
+    private static final float FADE_FAR  = 300.0F;
     /** Дистанция, ближе которой стена полностью непрозрачна. */
-    private static final float FADE_NEAR = 30.0F;
+    private static final float FADE_NEAR = 200.0F;
 
     /** Высота плавного затухания верхнего края стены (в блоках). */
     private static final float FADE_TOP_HEIGHT = 10.0F;

@@ -18,6 +18,7 @@ public class PoisonFogMixin {
 
     // ====== Настройки по тирам ======
     // Верхняя граница тумана (полная непрозрачность).
+    private static final float TIER1_DISTANCE = 180.0F;
     private static final float TIER2_DISTANCE = 60.0F;
     private static final float TIER3_DISTANCE = 30.0F;
     private static final float TIER4_DISTANCE = 12.0F;
@@ -29,21 +30,23 @@ public class PoisonFogMixin {
     private static final float SMOOTHING_K = 1.5F;
 
     /** При отуманении — если дистанция больше этого, туман считаем выключенным. */
-    private static final float DISABLE_THRESHOLD = 350.0F;
+    private static final float DISABLE_THRESHOLD = 650.0F;
+    private static final float FADE_OUT_TARGET = 800.0F;
 
     /** Доля от верхней границы, где начинается затухание (0 = сразу, 0.6 = в конце). */
     private static final float FOG_START_RATIO = 0.3F;
 
+    /** Насколько туман поднимается над горизонтом (для неба и облаков). */
+    private static final float SKY_FAR_BAND = 1.0F;
+
     // Ширина дальней полосы (за верхней границей) — чтобы горизонт тонул в тумане.
-    private static final float FAR_BAND = 20.0F;
+    private static final float FAR_BAND = 1.0F;
 
     // Цвет тумана (R, G, B), 0..1. Зелёный — в тон яда.
     private static final float FOG_R = 0.08F;
     private static final float FOG_G = 0.20F;
     private static final float FOG_B = 0.08F;
 
-    // Скорость плавного перехода между тирами (0..1). Меньше — плавнее.
-    private static final float SMOOTHING = 0.5F;
 
     // ====== Плавное сглаживание ======
     /** Текущая «сглаженная» дистанция тумана. -1 = отключено. */
@@ -56,36 +59,48 @@ public class PoisonFogMixin {
                                         float darkenWorldAmount,
                                         ClientLevel level,
                                         CallbackInfoReturnable<FogData> cir) {
-
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null) return;
 
         int tier = getPoisonTier(player);
+
+        // ★ Под водой для тиров 1–2 уступаем место ванильному подводному туману.
+        if (player.isUnderWater() && (tier == 1 || tier == 2)) {
+            // Плавно «убираем» наш туман, чтобы при выходе из воды не было прыжка.
+            if (smoothedDistance >= 0) {
+                float dt = deltaTracker.getRealtimeDeltaTicks() / 20.0F;
+                if (dt <= 0.0F || dt > 0.5F) dt = 1.0F / 60.0F;
+
+                smoothedDistance = approach(smoothedDistance, FADE_OUT_TARGET, dt);
+                if (smoothedDistance >= DISABLE_THRESHOLD) {
+                    smoothedDistance = -1.0F;
+                }
+            }
+            return;
+        }
+
         float targetDistance = switch (tier) {
+            case 1 -> TIER1_DISTANCE;
             case 2 -> TIER2_DISTANCE;
             case 3 -> TIER3_DISTANCE;
             case 4 -> TIER4_DISTANCE;
             default -> -1.0F;
         };
 
-        // Время кадра в секундах. getRealtimeDeltaTicks() возвращает тики (1 tick = 50 ms).
         float dt = deltaTracker.getRealtimeDeltaTicks() / 20.0F;
-        if (dt <= 0.0F || dt > 0.5F) dt = 1.0F / 60.0F; // защита от выбросов
+        if (dt <= 0.0F || dt > 0.5F) dt = 1.0F / 60.0F;
 
         // ====== Обновляем smoothedDistance ======
         if (targetDistance < 0) {
-            // Эффекта нет — туман должен уйти.
-            if (smoothedDistance < 0) return; // уже отключён
-            smoothedDistance = approach(smoothedDistance, INITIAL_DISTANCE, dt);
+            if (smoothedDistance < 0) return;
+            smoothedDistance = approach(smoothedDistance, FADE_OUT_TARGET, dt);
             if (smoothedDistance >= DISABLE_THRESHOLD) {
                 smoothedDistance = -1.0F;
                 return;
             }
         } else {
-            // Эффект есть.
             if (smoothedDistance < 0) {
-                // Только что появился — стартуем с далёкого значения, туман «придёт» сам.
                 smoothedDistance = INITIAL_DISTANCE;
             }
             smoothedDistance = approach(smoothedDistance, targetDistance, dt);
@@ -104,12 +119,10 @@ public class PoisonFogMixin {
 
         fog.environmentalStart  = fogStart;
         fog.environmentalEnd    = fogEnd;
-
         fog.renderDistanceStart = fogEnd;
         fog.renderDistanceEnd   = fogEnd + FAR_BAND;
-
-        fog.skyEnd   = fogEnd + FAR_BAND;
-        fog.cloudEnd = fogEnd + FAR_BAND;
+        fog.skyEnd   = fogEnd + SKY_FAR_BAND;
+        fog.cloudEnd = fogEnd + SKY_FAR_BAND;
     }
 
     /** Экспоненциальный подход к цели. dt — время кадра в секундах. */

@@ -1,8 +1,10 @@
 package net.elrid.hardmode.client;
 
 import net.elrid.hardmode.HardMode;
+import net.elrid.hardmode.client.command.FogTestCommand;
 import net.elrid.hardmode.zone.ModEffects;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.DeltaTracker;
@@ -30,6 +32,10 @@ public class HardModeClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		ClientZoneState.register();
 		SafeZoneWallRenderer.register();
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, _) -> {
+			FogTestCommand.register(dispatcher);
+		});
+		//вокруг экрана штука
 //		HudElementRegistry.attachElementAfter(
 //				VanillaHudElements.MISC_OVERLAYS,
 //				OVERLAY_ID,

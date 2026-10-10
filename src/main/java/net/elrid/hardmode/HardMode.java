@@ -32,6 +32,7 @@ public class HardMode implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("Hello Fabric world!");
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+
 			currentServer = server;
 		});
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {

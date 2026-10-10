@@ -2,22 +2,24 @@ package net.elrid.hardmode.zone.effects;
 
 import net.elrid.hardmode.HardMode;
 import net.elrid.hardmode.zone.ModDamageTypes;
+import net.elrid.hardmode.zone.SafeZoneConfig;
+import net.elrid.hardmode.zone.SafeZoneState;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 public abstract class AbstractLethalPoisonEffect extends MobEffect {
 
-    private static final float LOW_HP_THRESHOLD = 0.7F;
-    private static final int LOW_HP_SAFE_DURATION = 40;
+    private static final float LOW_HP_THRESHOLD = 0.5F;
+    private static final int LOW_HP_SAFE_DURATION = 15;
 
     protected AbstractLethalPoisonEffect() {
         super(MobEffectCategory.HARMFUL, 0x4E9331);
@@ -30,8 +32,6 @@ public abstract class AbstractLethalPoisonEffect extends MobEffect {
     /** Интервал удара в тиках (30, 20, 15, 10). */
     public abstract int damageInterval();
 
-    /** Сколько всего должен длиться эффект (10 секунд = 200 тиков). */
-    public abstract int totalDuration();
 
     /** Урон за один тик удара. */
     protected abstract float damage();
@@ -39,6 +39,8 @@ public abstract class AbstractLethalPoisonEffect extends MobEffect {
     protected boolean canKill() {
         return true;
     }
+
+    public int totalDuration() { return SafeZoneConfig.POISON_EFFECT_DURATION; }
 
     @Override
     public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
@@ -64,7 +66,11 @@ public abstract class AbstractLethalPoisonEffect extends MobEffect {
         }
 
         // Не добивать на низком HP в конце эффекта
-        if (entity.getHealth() <= LOW_HP_THRESHOLD && remaining < LOW_HP_SAFE_DURATION) {
+        if (damage != 0
+                && mercyEnabled()
+                && entity.getHealth() <= LOW_HP_THRESHOLD
+                && remaining < LOW_HP_SAFE_DURATION
+                && isSafeFromPoison(level, entity)) {
             damage = 0;
         }
 
@@ -75,6 +81,28 @@ public abstract class AbstractLethalPoisonEffect extends MobEffect {
         entity.hurtServer(level, new DamageSource(damageType), damage);
 
         return true;
+    }
+
+    /**
+     * ★ Щадить ли игрока, если он в зоне / под водой и HP низкий.
+     * Переопределите на false в старших тирах — они не дают поблажек.
+     */
+    protected boolean mercyEnabled() {
+        return true;
+    }
+
+    /**
+     * Игрок вне опасности, если он в зоне или под водой.
+     * Спасает от добивания в момент, когда игрок уже вернулся, но эффект ещё висит.
+     */
+    private boolean isSafeFromPoison(ServerLevel level, LivingEntity entity) {
+        if (entity.isUnderWater()) return true;
+
+        Vec3 center = SafeZoneState.getCenter(level);
+        double radius = SafeZoneState.getRadius(level);
+        double dx = entity.getX() - center.x;
+        double dz = entity.getZ() - center.z;
+        return dx * dx + dz * dz <= radius * radius;
     }
 
     /** Находит MobEffectInstance этой сущности, чей эффект == this. */

@@ -2,12 +2,14 @@ package net.elrid.hardmode.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import net.elrid.hardmode.zone.SafeZonePhase;
 import net.elrid.hardmode.zone.SafeZoneState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public class ZonePositionCommand {
@@ -23,32 +25,40 @@ public class ZonePositionCommand {
         CommandSourceStack source = context.getSource();
         ServerLevel level = source.getLevel();
 
-        // Убедимся, что команда выполняется в оверворлде
-        if (!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+        if (!level.dimension().equals(Level.OVERWORLD)) {
             source.sendFailure(Component.literal("Команда доступна только в Оверворлде.")
                     .withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        // Получаем данные о зоне
-        SafeZoneState.Phase phase = SafeZoneState.getPhase();
+        SafeZonePhase phase = SafeZoneState.getPhase();
         Vec3 center = SafeZoneState.getCenter(level);
         double radius = SafeZoneState.getRadius(level);
 
-        // Вычисляем оставшееся время фазы
         long now = level.getGameTime();
         long phaseStart = SafeZoneState.debugGetPhaseStartTick();
-        long duration = (phase == SafeZoneState.Phase.STATIC)
-                ? SafeZoneState.STATIC_DURATION
-                : SafeZoneState.MOVING_DURATION;
+        long duration = SafeZoneState.phaseDuration(phase);
         long elapsed = now - phaseStart;
         long remaining = Math.max(0, duration - elapsed);
 
-        // Форматируем вывод
-        String phaseName = (phase == SafeZoneState.Phase.STATIC)
-                ? "СТОИТ" : "ДВИЖЕТСЯ";
-        ChatFormatting phaseColor = (phase == SafeZoneState.Phase.STATIC)
-                ? ChatFormatting.GREEN : ChatFormatting.RED;
+        String phaseName = switch (phase) {
+            case BEGIN      -> "НАЧАЛО";
+            case MARCH      -> "ДВИЖЕНИЕ";
+            case REST_SHORT -> "КОРОТКИЙ ОТДЫХ";
+            case EXPAND     -> "РАСШИРЕНИЕ";
+            case REST_LONG  -> "ДОЛГИЙ ОТДЫХ";
+            case EYE_CHASE        -> "СЛЕДУЕТ ЗА ОКОМ";
+            case EYE_HOLD_FAIL    -> "ОСТАНОВКА (нет крепости)";
+            case EYE_HOLD_SUCCESS -> "ОСТАНОВКА В КРЕПОСТИ";
+        };
+        ChatFormatting phaseColor = switch (phase) {
+            case BEGIN      -> ChatFormatting.GREEN;
+            case MARCH      -> ChatFormatting.RED;
+            case REST_SHORT -> ChatFormatting.GRAY;
+            case EXPAND     -> ChatFormatting.GREEN;
+            case REST_LONG  -> ChatFormatting.GRAY;
+            case EYE_CHASE, EYE_HOLD_SUCCESS, EYE_HOLD_FAIL -> ChatFormatting.LIGHT_PURPLE;
+        };
 
         source.sendSuccess(() -> Component.literal("═══ Состояние зоны ═══")
                 .withStyle(ChatFormatting.GOLD), false);
@@ -69,6 +79,20 @@ public class ZonePositionCommand {
                         "Осталось: %d сек (%d тиков)",
                         remaining / 20, remaining))
                 .withStyle(ChatFormatting.YELLOW), false);
+
+        // Для фазы MOVE — дополнительно покажем, куда летит зона.
+        if (phase == SafeZonePhase.MARCH) {
+            Vec3 target = SafeZoneState.debugGetPhaseTargetPos();
+            if (target != null) {
+                double dx = target.x - center.x;
+                double dz = target.z - center.z;
+                double dist = Math.sqrt(dx * dx + dz * dz);
+                source.sendSuccess(() -> Component.literal(String.format(
+                                "Цель: X=%.1f, Z=%.1f (осталось %.1f блоков)",
+                                target.x, target.z, dist))
+                        .withStyle(ChatFormatting.LIGHT_PURPLE), false);
+            }
+        }
 
         return 1;
     }

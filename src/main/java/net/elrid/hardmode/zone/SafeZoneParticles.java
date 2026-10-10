@@ -59,7 +59,6 @@ public final class SafeZoneParticles {
         spawnAmbientDust(level, player, GREEN_DUST);
         spawnAmbientDust(level, player, GREEN_DUST_SMALL);
         spawnAmbientDust(level, player, GREEN_FALLING);
-        spawnFallingSnow(level, player);
     }
 
     // ==================== Висящие зелёные частицы ====================
@@ -82,55 +81,6 @@ public final class SafeZoneParticles {
 
             level.sendParticles(
                     player, particleOptions, true, true,
-                    x, y, z,
-                    1, 0, 0, 0, 0.0
-            );
-        }
-    }
-
-    //private static void spawnAmbientDust(ServerLevel level, ServerPlayer player, BlockParticleOption particleOption) {
-    //    double eyeY = player.getY() + player.getEyeHeight();
-//
-    //    for (int i = 0; i < DUST_PER_TICK; i++) {
-    //        double angle = level.getRandom().nextDouble() * Math.PI * 2.0;
-    //        double horizDist = HORIZ_MIN_DIST
-    //                + level.getRandom().nextDouble() * (HORIZ_MAX_DIST - HORIZ_MIN_DIST);
-//
-    //        double x = player.getX() + Math.cos(angle) * horizDist;
-    //        double z = player.getZ() + Math.sin(angle) * horizDist;
-//
-    //        double y = player.getY()
-    //                + (level.getRandom().nextDouble() * 2.0 - 1.0) * VERTICAL_DISTRIBUTION;
-//
-    //        if (isInsideFaceSphere(x, y, z, player, eyeY)) continue;
-//
-    //        level.sendParticles(
-    //                player, particleOption, true, true,
-    //                x, y, z,
-    //                1, 0, 0, 0, 0.0
-    //        );
-    //    }
-    //}
-
-    // ==================== Падающие снежинки ====================
-
-    private static void spawnFallingSnow(ServerLevel level, ServerPlayer player) {
-        double eyeY = player.getY() + player.getEyeHeight();
-
-        for (int i = 0; i < SNOW_PER_TICK; i++) {
-            double angle = level.getRandom().nextDouble() * Math.PI * 2.0;
-            double horizDist = level.getRandom().nextDouble() * HORIZ_MAX_DIST;
-
-            double x = player.getX() + Math.cos(angle) * horizDist;
-            double z = player.getZ() + Math.sin(angle) * horizDist;
-
-            double y = player.getY() + VERTICAL_DISTRIBUTION
-                    + level.getRandom().nextDouble() * 3.0;
-
-            if (isInsideFaceSphere(x, y, z, player, eyeY)) continue;
-
-            level.sendParticles(
-                    player, ParticleTypes.SNOWFLAKE, true, true,
                     x, y, z,
                     1, 0, 0, 0, 0.0
             );
